@@ -1,0 +1,116 @@
+python timeseries stats models
+
+Basic models include univariate 
+autoregressive models (AR), vector autoregressive models (VAR) and univariate autoregressive moving average models (ARMA).
+
+Non-linear models include Markov switching dynamic regression and autoregression
+
+Desc
+autocorrelation, partial autocorrelation function and periodogram, as well as the 
+corresponding theoretical properties of ARMA or related processes
+
+Mean and autocovariance are stationary if indep of t
+
+X:S => R
+
+
+import pandas as pd
+#Time series in python - 
+
+# Quandl Quandl is a marketplace for financial, 
+# economic and alternative data delivered in modern formats for today's analysts, 
+# including Python, Excel, Matlab, R, and via our API.
+
+# quandl for financial data
+import quandl
+
+quandl.ApiConfig.api_key = 'ahfshAAqqWWkl'
+
+
+# Retrieve financial data from Quandl - of any stock lets say ABC
+
+dtStock1 = quandl.get('WIKI/ABC')
+dtStock2 = quandl.get('WIKI/XYZ')
+dtStock2.head(5)
+dtStock1.head(5)
+
+# If Dates an index, add ticks
+# dtStock1['Ticks'] = range(0,len(dtStock1.index.values))
+# dtStock1 =  dtStock1.reset_index()
+
+# We are concerned about adjusted close in financial ts data of stocks
+
+
+# First one
+plt.plot(dtStock2.index, dtStock2['Adj. Close'])
+plt.title('Stock 2 Price')
+plt.ylabel('Price ($)');
+plt.show()
+
+#Second one
+plt.plot(dtStock1.index, dtStock1['Adj. Close'], 'r')
+plt.title('Stock 1 Price')
+plt.ylabel('Price ($)');
+plt.show();
+
+
+
+# Yearly average number of shares outstanding 1 and2
+dtStock1_shares = {2018: 168e6, 2017: 162e6, 2016: 144e6, 2015: 128e6, 2014: 125e6, 2013: 119e6, 2012: 107e6, 2011: 100e6, 2010: 51e6}
+dtStock2_shares = {2018: 1.42e9, 2017: 1.50e9, 2016: 1.54e9, 2015: 1.59e9, 2014: 1.61e9, 2013: 1.39e9, 2012: 1.57e9, 2011: 1.54e9, 2010:1.50e9}
+
+# Index has year
+# Create a year column 
+dtStock1['Year'] = dtStock1.index.year
+# Take Dates from index and move to Date column 
+dtStock1.reset_index(level=0, inplace = True)
+dtStock1['cap'] = 0
+# Calculate market capitalization - all years
+for i, year in enumerate(dtStock1['Year']):
+    # Retrieve the shares for the year
+    shares = dtStock1_shares.get(year)
+    
+    # Update the cap column = shares * price
+    # dtStock1 ith row, colum: cap = shares value * ith column x adjusting close
+    # ix is to access value at certain row which is variable in our case
+    # and hard coded column because we picking aj close and cap column to fetch and fill values
+    dtStock1.ix[i, 'cap'] = shares * dtStock1.ix[i, 'Adj. Close']
+    
+    
+
+plt.figure(figsize=(10, 8))
+plt.plot(cars['Date'], cars['dtStock2_cap'], 'b-', label = 'dtStock2')
+plt.plot(cars['Date'], cars['dtStock1_cap'], 'r-', label = 'dtStock1')
+plt.xlabel('Date'); plt.ylabel('Market Cap (Billions $)'); plt.title('Market Cap of 1 and 2')
+plt.legend();
+
+# Just Plotting and looking
+
+
+
+import numpy as np
+
+# Question ----
+# NExt imp question: When was the first and last time stock 1 was valued higher than stock 2
+
+# in cars - gather Find row in cars  --> min of (first date) / max of (last date) --> listOf
+                                                      --> np. where --> cap of dtStock1 > cap of dtStock2
+first_date = cars.ix[np.min(list(np.where(cars['dtStock1_cap'] > cars['dtStock2_cap'])[0])), 'Date']
+last_date = cars.ix[np.max(list(np.where(cars['tesla_cap'] > cars['gm_cap'])[0])), 'Date']
+
+#Facebook Prophet
+
+import fbprophet
+# Prophet requires columns ds (Date) and y (value)
+dtStock2 = dtStock2.rename(columns={'Date': 'ds', 'cap': 'y'})
+# Convet market cap to billions probably divide by 1e9
+dtStock2['y'] = dtStock2['y'] / 1e9
+# Make the prophet model and fit on the data
+dtStock2_prophet = fbprophet.Prophet(changepoint_prior_scale=0.15)
+dtStock2_prophet.fit(dtStock2)
+
+dtStock2_forecast = dtStock2_prophet.make_future_dataframe(periods=365 * 2, freq='D')
+
+dtStock2_forecast = dtStock2_prophet.predict(dtStock2_forecast)
+
+
