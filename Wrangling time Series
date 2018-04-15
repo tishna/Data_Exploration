@@ -1,0 +1,45 @@
+#Sampling
+
+# Import packages
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+sns.set()
+
+
+# just sample
+df.sample(frac = 0.1, random_state = np.random.randint(10))
+
+df = pd.read_csv('data/ts_data.csv', skiprows=1)
+df.head()
+
+# Check DT
+df.info()
+
+#Wrangling
+df.month = pd.to_datetime(df.month)
+df.set_index('month', inplace=True)
+
+df.plot(figsize=(20,10), linewidth=5, fontsize=20)
+plt.xlabel('Year', fontsize=20);
+
+
+df[['diet']].plot(figsize=(20,10), linewidth=5, fontsize=20)
+plt.xlabel('Year', fontsize=20);
+
+#Rolling Average --  remove the seasonality
+
+diet = df[['diet']] #If you use single brackets- you will create series
+diet.rolling(12).mean().plot(figsize=(20,10), linewidth=5, fontsize=20)
+plt.xlabel('Year', fontsize=20);
+
+gym = df[['gym']]
+gym.rolling(12).mean().plot(figsize=(20,10), linewidth=5, fontsize=20)
+plt.xlabel('Year', fontsize=20);
+
+#Concat
+df_rm = pd.concat([diet.rolling(12).mean(), gym.rolling(12).mean()], axis=1)
+df_rm.plot(figsize=(20,10), linewidth=5, fontsize=20)
+plt.xlabel('Year', fontsize=20);
